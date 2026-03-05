@@ -1,0 +1,10 @@
+[
+    {
+        "merged": "C:\\Users\\macdo\\.gradle\\daemon\\8.5\\com.example.studentgrades.app-merged_res-31:\\layout_activity_main.xml.flat",
+        "source": "C:\\Users\\macdo\\.gradle\\daemon\\8.5\\com.example.studentgrades.app-main-33:\\layout\\activity_main.xml"
+    },
+    {
+        "merged": "com.example.studentgrades.app-merged_res-31:/layout_activity_main.xml.flat",
+        "source": "com.example.studentgrades.app-main-33:/layout/activity_main.xml"
+    }
+]

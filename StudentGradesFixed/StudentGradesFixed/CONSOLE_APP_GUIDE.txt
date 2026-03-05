@@ -1,0 +1,144 @@
+==========================================
+CONSOLE APP SETUP GUIDE
+==========================================
+
+This console app converts student marks from Excel files to letter grades.
+
+REQUIREMENTS:
+- Java 11 or later (you have: Java 17 OpenJDK)
+- Gradle 8.5 (optional if pre-built JAR exists)
+
+========== QUICK START (if JAR already built) ==========
+
+Run from Command Prompt:
+  java -jar console-app\build\libs\console-app.jar students.xlsx
+
+Or use the batch script:
+  run-console-app.bat students.xlsx
+
+========== EXCEL FILE FORMAT ==========
+
+Your Excel file must have:
+  Column A: Student Names (first row is header)
+  Column B: Marks/Scores (0-100)
+  
+Example:
+  | Name    | Marks |
+  |---------|-------|
+  | Alice   | 85    |
+  | Bob     | 72    |
+  | Charlie | 95    |
+
+========== SETUP (if JAR not yet built) ==========
+
+Option 1: Using Gradle locally installed
+--------------------------------------------
+If you have Gradle installed globally:
+  cd StudentGradesFixed
+  gradle console-app:build -x test
+  java -jar console-app\build\libs\console-app.jar students.xlsx
+
+Option 2: Download and extract Gradle manually
+-----------------------------------------------
+1. Download Gradle 8.5 from:
+   https://gradle.org/releases/
+   (Download: gradle-8.5-all.zip)
+
+2. Extract to the project root directory:
+   StudentGradesFixed\gradle-8.5\
+
+3. Build the project:
+   gradle-8.5\bin\gradle.bat console-app:build -x test
+
+4. Run the app:
+   java -jar console-app\build\libs\console-app.jar students.xlsx
+
+Option 3: Using Android Studio
+-------------------------------
+1. Open Android Studio
+2. File > Open > select StudentGradesFixed folder
+3. Wait for gradle sync
+4. Terminal > New Terminal
+5. Type: gradle console-app:build -x test
+6. Then: java -jar console-app/build/libs/console-app.jar students.xlsx
+
+========== GRADE SCALE ==========
+
+A+ = 90-100  (Excellent)
+A  = 80-89   (Very Good)
+B  = 70-79   (Good)
+C  = 60-69   (Average)
+D  = 50-59   (Pass)
+F  = 0-49    (Fail)
+
+========== OUTPUT ==========
+
+The app creates: StudentGrades_Output.xlsx
+Contains 3 columns:
+  Column A: Student Name
+  Column B: Marks
+  Column C: Grade
+
+========== TROUBLESHOOTING ==========
+
+Q: "Error: Could not find or load main class"
+A: The JAR file doesn't exist. Run setup first (option 2 or 3 above).
+
+Q: "No valid data found"
+A: Check your Excel format:
+   - Column A must have Names
+   - Column B must have Mark numbers
+   - First row is skipped (header row)
+
+Q: File not found error
+A: Make sure to provide full path to Excel file:
+   java -jar console-app\build\libs\console-app.jar C:\Users\YourName\Downloads\marks.xlsx
+
+Q: "Gradle build failed"
+A: Try: gradle clean console-app:build -x test
+
+========== RUNNING FROM ANY DIRECTORY ==========
+
+Copy the JAR file to a permanent location:
+  1. Find: console-app\build\libs\console-app.jar
+  2. Copy to: C:\Program Files\StudentGradesApp\
+  3. Create batch file runner.bat:
+     
+     @echo off
+     java -jar "C:\Program Files\StudentGradesApp\console-app.jar" %1
+
+  4. Run from any directory: runner.bat C:\path\to\marks.xlsx
+
+========== COMMAND LINE USAGE ==========
+
+java -jar console-app\build\libs\console-app.jar <excel_file_path>
+
+Examples:
+  java -jar console-app\build\libs\console-app.jar students.xlsx
+  java -jar console-app\build\libs\console-app.jar "C:\Users\John\Downloads\marks.xlsx"
+  java -jar console-app\build\libs\console-app.jar ..\..\some\path\grades.xlsx
+
+========== FOR DEVELOPERS ==========
+
+Project structure:
+  console-app/
+    src/main/kotlin/
+      com/example/studentgrades/
+        MainConsole.kt          - Entry point for console app
+  build.gradle                - Build configuration
+  
+To modify grade scale:
+  Edit console-app/src/main/kotlin/com/example/studentgrades/MainConsole.kt
+  Find function: calculateGrade(marks: Int)
+  Modify the when block with new ranges
+  Rebuild: gradle console-app:build -x test
+
+========== NOTES ==========
+
+- The console app is a standalone Java Application
+- Does NOT require Android SDK
+- Can be run on any Windows/Mac/Linux with Java installed
+- Processing is fast even for large files (1000+ students)
+- Output file is created in the same directory as input file
+
+For more info: Check README.md

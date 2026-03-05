@@ -1,0 +1,70 @@
+plugins {
+    id 'com.android.application'
+    id 'org.jetbrains.kotlin.android'
+}
+
+android {
+    namespace 'com.example.studentgrades'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.example.studentgrades"
+        minSdk 26
+        targetSdk 34
+        versionCode 1
+        versionName "1.0"
+        multiDexEnabled true
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
+
+    kotlinOptions {
+        jvmTarget = '11'
+    }
+
+    packagingOptions {
+        resources {
+            excludes += [
+                'META-INF/DEPENDENCIES',
+                'META-INF/LICENSE',
+                'META-INF/LICENSE.txt',
+                'META-INF/NOTICE',
+                'META-INF/NOTICE.txt',
+                'META-INF/*.RSA',
+                'META-INF/*.SF',
+                'META-INF/*.DSA'
+            ]
+        }
+    }
+}
+
+configurations.all {
+    exclude group: 'org.apache.logging.log4j'
+    exclude group: 'org.slf4j', module: 'slf4j-log4j12'
+    exclude group: 'log4j'
+}
+
+dependencies {
+    implementation 'androidx.core:core-ktx:1.12.0'
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'com.google.android.material:material:1.11.0'
+    implementation 'androidx.multidex:multidex:2.0.1'
+
+    // Apache POI - only OOXML needed for .xlsx
+    implementation('org.apache.poi:poi-ooxml:5.2.3') {
+        exclude group: 'org.apache.logging.log4j'
+        exclude group: 'com.github.virtuald', module: 'curvesapi'
+    }
+    implementation 'org.apache.poi:poi:5.2.3'
+    implementation 'org.apache.xmlbeans:xmlbeans:5.1.1'
+    implementation 'com.fasterxml.woodstox:woodstox-core:6.5.1'
+}

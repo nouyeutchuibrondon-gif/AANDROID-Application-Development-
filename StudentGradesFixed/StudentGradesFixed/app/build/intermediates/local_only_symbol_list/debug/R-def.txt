@@ -1,0 +1,10 @@
+R_DEF: Internal format may change without notice
+local
+id btnExport
+id btnPickFile
+id cardOutput
+id progressBar
+id tvOutput
+id tvStatus
+layout activity_main
+string app_name
