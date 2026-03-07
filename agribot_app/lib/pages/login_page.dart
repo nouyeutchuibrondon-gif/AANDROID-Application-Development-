@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'dart:ui' as ui;
+import 'dashboard_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -9,16 +9,25 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
+  final _emailController = TextEditingController(text: 'operator@agribot.com');
+  final _passwordController = TextEditingController(text: 'password');
   bool _isPasswordVisible = false;
   bool _isLoading = false;
+  bool _isFingerprintAvailable = true;
+  bool _isFingerprintEnrolled = true;
+  String _selectedRobotType = 'AGRIBOT-04';
 
-  // Color scheme
-  static const Color darkBg = Color(0xFF0A2818);
-  static const Color brightGreen = Color(0xFF00FF00);
-  static const Color accentGreen = Color(0xFF1F4D2C);
-  static const Color textGray = Color(0xFF8A9BA8);
+  static const Color darkGreen = Color(0xFF1B5E20);
+  static const Color lightGreen = Color(0xFF4CAF50);
+  static const Color darkBg = Color(0xFF121212);
+
+  static final List<String> robotTypes = [
+    'AGRIBOT-01',
+    'AGRIBOT-02',
+    'AGRIBOT-03',
+    'AGRIBOT-04',
+    'AGRIBOT-05',
+  ];
 
   @override
   void dispose() {
@@ -28,52 +37,61 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _handleLogin() {
+    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please fill all fields')),
+      );
+      return;
+    }
+
     setState(() {
       _isLoading = true;
     });
 
     Future.delayed(const Duration(seconds: 2), () {
-      setState(() {
-        _isLoading = false;
-      });
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Login successful!')),
+        setState(() {
+          _isLoading = false;
+        });
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (context) =>
+                DashboardPage(selectedRobot: _selectedRobotType),
+          ),
         );
       }
     });
   }
 
-  Widget _buildGoogleLogo() {
-    return SizedBox(
-      width: 24,
-      height: 24,
-      child: Image.asset(
-        'assets/images/google_logo.png',
-        fit: BoxFit.contain,
-        errorBuilder: (context, error, stackTrace) {
-          // Fallback if image not found
-          return Container(
-            width: 24,
-            height: 24,
-            decoration: BoxDecoration(
-              color: const Color(0xFF4285F4),
-              borderRadius: BorderRadius.circular(3),
-            ),
-            child: const Center(
-              child: Text(
-                'G',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                ),
+  void _handleFingerprintLogin() {
+    setState(() {
+      _isLoading = true;
+    });
+
+    Future.delayed(const Duration(seconds: 1), () {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Fingerprint recognized! Logging in...'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+        Future.delayed(const Duration(seconds: 1), () {
+          if (mounted) {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(
+                builder: (context) =>
+                    DashboardPage(selectedRobot: _selectedRobotType),
               ),
-            ),
-          );
-        },
-      ),
-    );
+            );
+          }
+        });
+      }
+    });
   }
 
   @override
@@ -81,480 +99,331 @@ class _LoginPageState extends State<LoginPage> {
     return Scaffold(
       backgroundColor: darkBg,
       body: SingleChildScrollView(
-        child: Column(
-          children: [
-            // Top Bar
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  IconButton(
-                    onPressed: () {},
-                    icon: const Icon(
-                      Icons.close,
-                      color: Colors.white,
-                      size: 28,
-                    ),
-                  ),
-                  const Text(
-                    'Login',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(width: 48),
-                ],
-              ),
-            ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Column(
+            children: [
+              const SizedBox(height: 60),
 
-            const SizedBox(height: 24),
-
-            // System Status Card
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Container(
+              // Logo
+              Container(
+                width: 100,
+                height: 100,
                 decoration: BoxDecoration(
-                  border: Border.all(color: brightGreen, width: 2),
-                  borderRadius: BorderRadius.circular(24),
-                  color: accentGreen.withOpacity(0.3),
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    colors: [lightGreen, darkGreen],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: lightGreen.withOpacity(0.5),
+                      blurRadius: 20,
+                      spreadRadius: 5,
+                    ),
+                  ],
                 ),
-                padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
-                child: Stack(
-                  alignment: Alignment.center,
+                child: const Icon(
+                  Icons.agriculture,
+                  color: Colors.white,
+                  size: 50,
+                ),
+              ),
+              const SizedBox(height: 30),
+
+              // Title
+              const Text(
+                'AGRIBOT',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 36,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 3,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Agricultural Robot Control',
+                style: TextStyle(
+                  color: Colors.grey[400],
+                  fontSize: 14,
+                  letterSpacing: 1,
+                ),
+              ),
+              const SizedBox(height: 40),
+
+              // Email Field
+              TextField(
+                controller: _emailController,
+                style: const TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  prefixIcon: Icon(Icons.email, color: lightGreen),
+                  hintText: 'Email Address',
+                  hintStyle: TextStyle(color: Colors.grey[600]),
+                  filled: true,
+                  fillColor: Colors.grey[900],
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide(
+                      color: Colors.grey[800]!,
+                      width: 1,
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide(
+                      color: lightGreen,
+                      width: 2,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Password Field
+              TextField(
+                controller: _passwordController,
+                obscureText: !_isPasswordVisible,
+                style: const TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  prefixIcon: Icon(Icons.lock, color: lightGreen),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _isPasswordVisible
+                          ? Icons.visibility
+                          : Icons.visibility_off,
+                      color: Colors.grey[600],
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _isPasswordVisible = !_isPasswordVisible;
+                      });
+                    },
+                  ),
+                  hintText: 'Password',
+                  hintStyle: TextStyle(color: Colors.grey[600]),
+                  filled: true,
+                  fillColor: Colors.grey[900],
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide(
+                      color: Colors.grey[800]!,
+                      width: 1,
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide(
+                      color: lightGreen,
+                      width: 2,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // Fingerprint Login Button
+              if (_isFingerprintAvailable)
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: _isFingerprintEnrolled
+                        ? _handleFingerprintLogin
+                        : null,
+                    icon: Icon(
+                      Icons.fingerprint,
+                      color: _isFingerprintEnrolled
+                          ? Colors.black87
+                          : Colors.grey[600],
+                    ),
+                    label: Text(
+                      'Use Fingerprint',
+                      style: TextStyle(
+                        color: _isFingerprintEnrolled
+                            ? Colors.black87
+                            : Colors.grey[600],
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _isFingerprintEnrolled
+                          ? Colors.greenAccent[400]
+                          : Colors.grey[700],
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
+                ),
+              const SizedBox(height: 20),
+
+              // Robot Type Selection
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: Colors.grey[800]!,
+                    width: 1,
+                  ),
+                  borderRadius: BorderRadius.circular(10),
+                  color: Colors.grey[900],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Blurred background image layer
-                    Positioned.fill(
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(24),
-                        child: Image.asset(
-                          'assets/images/farm_background.png',
-                          fit: BoxFit.cover,
-                          opacity: AlwaysStoppedAnimation(0.7),
-                          errorBuilder: (context, error, stackTrace) {
-                            return Container(
-                              color: darkBg,
-                            );
+                    Text(
+                      'Select Robot',
+                      style: TextStyle(
+                        color: lightGreen,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      children: robotTypes.map((robot) {
+                        bool isSelected = robot == _selectedRobotType;
+                        return GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _selectedRobotType = robot;
+                            });
                           },
-                        ),
-                      ),
-                    ),
-                    // Blur filter overlay
-                    Positioned.fill(
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(24),
-                        child: BackdropFilter(
-                          filter: ui.ImageFilter.blur(sigmaX: 3.0, sigmaY: 3.0),
                           child: Container(
-                            color: brightGreen.withOpacity(0.08),
-                          ),
-                        ),
-                      ),
-                    ),
-                    // Content on top
-                    Column(
-                      children: [
-                        // Green Circle with Robot Icon
-                        Container(
-                          width: 140,
-                          height: 140,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: brightGreen,
-                            boxShadow: [
-                              BoxShadow(
-                                color: brightGreen.withOpacity(0.6),
-                                blurRadius: 20,
-                                spreadRadius: 3,
-                                offset: const Offset(0, 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? lightGreen
+                                  : Colors.transparent,
+                              border: Border.all(
+                                color: isSelected
+                                    ? lightGreen
+                                    : Colors.grey[700]!,
+                                width: 1.5,
                               ),
-                              BoxShadow(
-                                color: brightGreen.withOpacity(0.3),
-                                blurRadius: 40,
-                                spreadRadius: 10,
-                                offset: const Offset(0, 10),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              robot,
+                              style: TextStyle(
+                                color: isSelected
+                                    ? Colors.black
+                                    : Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
                               ),
-                              BoxShadow(
-                                color: darkBg.withOpacity(0.5),
-                                blurRadius: 15,
-                                spreadRadius: 2,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: const Icon(
-                            Icons.agriculture,
-                            size: 70,
-                            color: darkBg,
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        Container(
-                          decoration: BoxDecoration(
-                            border: Border.all(color: brightGreen, width: 2),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
-                          ),
-                          child: const Text(
-                            'SYSTEM ONLINE',
-                            style: TextStyle(
-                              color: brightGreen,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 1.2,
                             ),
                           ),
-                        ),
-                      ],
+                        );
+                      }).toList(),
                     ),
                   ],
                 ),
               ),
-            ),
+              const SizedBox(height: 30),
 
-            const SizedBox(height: 32),
-
-            // Title and Subtitle
-            const Text(
-              'AGRIBOT',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 36,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 2,
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Smart Pest-Control & Crop Monitoring',
-              style: TextStyle(
-                color: textGray,
-                fontSize: 14,
-                letterSpacing: 0.5,
-              ),
-            ),
-
-            const SizedBox(height: 32),
-
-            // Credentials Section
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Email Field
-                  const Text(
-                    'Email or Username',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: _emailController,
-                    style: const TextStyle(color: brightGreen),
-                    decoration: InputDecoration(
-                      prefixIcon: const Icon(
-                        Icons.email_outlined,
-                        color: brightGreen,
-                      ),
-                      hintText: 'Enter your credentials',
-                      hintStyle: const TextStyle(color: textGray),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: const BorderSide(color: brightGreen, width: 2),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: const BorderSide(color: brightGreen, width: 2),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: const BorderSide(color: brightGreen, width: 2),
-                      ),
-                      filled: true,
-                      fillColor: accentGreen.withOpacity(0.2),
-                    ),
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // Password Field with Forgot
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Password',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: () {},
-                        child: const Text(
-                          'Forgot?',
-                          style: TextStyle(
-                            color: brightGreen,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: _passwordController,
-                    obscureText: !_isPasswordVisible,
-                    style: const TextStyle(color: brightGreen),
-                    decoration: InputDecoration(
-                      prefixIcon: const Icon(
-                        Icons.lock_outlined,
-                        color: brightGreen,
-                      ),
-                      hintText: '••••••••',
-                      hintStyle: const TextStyle(color: brightGreen),
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _isPasswordVisible
-                              ? Icons.visibility_outlined
-                              : Icons.visibility_off_outlined,
-                          color: brightGreen,
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            _isPasswordVisible = !_isPasswordVisible;
-                          });
-                        },
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: const BorderSide(color: brightGreen, width: 2),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: const BorderSide(color: brightGreen, width: 2),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: const BorderSide(color: brightGreen, width: 2),
-                      ),
-                      filled: true,
-                      fillColor: accentGreen.withOpacity(0.2),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 32),
-
-            // Biometric Login
-            Column(
-              children: [
-                Container(
-                  width: 120,
-                  height: 120,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(color: brightGreen, width: 2),
-                  ),
-                  child: const Icon(
-                    Icons.fingerprint,
-                    color: brightGreen,
-                    size: 60,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  'BIOMETRIC LOGIN',
-                  style: TextStyle(
-                    color: brightGreen,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 1.2,
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 32),
-
-            // Login Button
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: SizedBox(
+              // Login Button
+              SizedBox(
                 width: double.infinity,
-                height: 60,
+                height: 50,
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _handleLogin,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: brightGreen,
+                    backgroundColor: lightGreen,
+                    disabledBackgroundColor: Colors.grey[700],
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                    disabledBackgroundColor: brightGreen.withOpacity(0.5),
                   ),
                   child: _isLoading
-                      ? const CircularProgressIndicator(
-                          strokeWidth: 3,
-                          valueColor:
-                              AlwaysStoppedAnimation<Color>(darkBg),
+                      ? SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor:
+                                AlwaysStoppedAnimation(Colors.grey[800]),
+                          ),
                         )
                       : const Text(
-                          'Login',
+                          'LOGIN',
                           style: TextStyle(
-                            color: darkBg,
-                            fontSize: 18,
+                            color: Colors.black,
+                            fontSize: 16,
                             fontWeight: FontWeight.bold,
-                            letterSpacing: 0.5,
+                            letterSpacing: 1,
                           ),
                         ),
                 ),
               ),
-            ),
+              const SizedBox(height: 20),
 
-            const SizedBox(height: 24),
-
-            // Sign Up Link
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text(
-                  "Don't have an account? ",
-                  style: TextStyle(
-                    color: textGray,
-                    fontSize: 14,
-                  ),
-                ),
-                TextButton(
-                  onPressed: () {},
-                  child: const Text(
-                    'Sign Up',
-                    style: TextStyle(
-                      color: brightGreen,
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 24),
-
-            // Divider
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Row(
+              // Guest Mode
+              Row(
                 children: [
                   Expanded(
                     child: Divider(
-                      color: textGray.withOpacity(0.3),
+                      color: Colors.grey[800],
                       thickness: 1,
                     ),
                   ),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                     child: Text(
-                      'OR CONTINUE WITH',
+                      'OR',
                       style: TextStyle(
-                        color: textGray,
-                        fontSize: 11,
-                        letterSpacing: 0.8,
+                        color: Colors.grey[600],
+                        fontSize: 12,
                       ),
                     ),
                   ),
                   Expanded(
                     child: Divider(
-                      color: textGray.withOpacity(0.3),
+                      color: Colors.grey[800],
                       thickness: 1,
                     ),
                   ),
                 ],
               ),
-            ),
+              const SizedBox(height: 20),
 
-            const SizedBox(height: 24),
-
-            // Google Login Button
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: SizedBox(
+              // Demo Mode Button
+              SizedBox(
                 width: double.infinity,
-                height: 56,
+                height: 50,
                 child: OutlinedButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            DashboardPage(selectedRobot: _selectedRobotType),
+                      ),
+                    );
+                  },
                   style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: brightGreen, width: 2),
+                    side: BorderSide(color: lightGreen, width: 1.5),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(10),
                     ),
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _buildGoogleLogo(),
-                      const SizedBox(width: 12),
-                      const Text(
-                        'Continue with Google',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
+                  child: Text(
+                    'DEMO MODE',
+                    style: TextStyle(
+                      color: lightGreen,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1,
+                    ),
                   ),
                 ),
               ),
-            ),
-
-            const SizedBox(height: 32),
-
-            // Bottom Navigation
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  TextButton.icon(
-                    onPressed: () {},
-                    icon: const Icon(Icons.person_outline, color: textGray),
-                    label: const Text(
-                      'Switch Account',
-                      style: TextStyle(
-                        color: textGray,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ),
-                  TextButton.icon(
-                    onPressed: () {},
-                    icon: const Icon(Icons.help_outline, color: textGray),
-                    label: const Text(
-                      'Support',
-                      style: TextStyle(
-                        color: textGray,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 16),
-          ],
+              const SizedBox(height: 60),
+            ],
+          ),
         ),
       ),
     );
