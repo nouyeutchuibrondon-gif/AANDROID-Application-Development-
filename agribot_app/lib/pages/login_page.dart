@@ -165,9 +165,22 @@ class _LoginPageState extends State<LoginPage> {
                             color: brightGreen,
                             boxShadow: [
                               BoxShadow(
-                                color: brightGreen.withOpacity(0.4),
-                                blurRadius: 30,
-                                spreadRadius: 5,
+                                color: brightGreen.withOpacity(0.6),
+                                blurRadius: 20,
+                                spreadRadius: 3,
+                                offset: const Offset(0, 4),
+                              ),
+                              BoxShadow(
+                                color: brightGreen.withOpacity(0.3),
+                                blurRadius: 40,
+                                spreadRadius: 10,
+                                offset: const Offset(0, 10),
+                              ),
+                              BoxShadow(
+                                color: darkBg.withOpacity(0.5),
+                                blurRadius: 15,
+                                spreadRadius: 2,
+                                offset: const Offset(0, 2),
                               ),
                             ],
                           ),
