@@ -111,7 +111,7 @@ class _EnvironmentalDataPageState extends State<EnvironmentalDataPage> {
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 decoration: BoxDecoration(
-                  color: isSelected ? Colors.greenAccent[400] : transparent,
+                  color: isSelected ? Colors.greenAccent[400] : Colors.transparent,
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Text(

@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'analytics_preview_page.dart';
+import 'manual_input_page.dart';
 import 'statistics_page.dart';
 import '../services/file_service.dart';
 import '../models/student.dart';
@@ -23,6 +25,9 @@ class ScalePage extends StatefulWidget {
 
 class _ScalePageState extends State<ScalePage> {
   int _selectedBase = 100;
+  bool _showPreview = false;
+  List<Student>? _previewStudents;
+  bool _isLoading = false;
 
   final List<_GradeRow> _grades = [
     _GradeRow(grade: "A", min: 70, max: 100),
@@ -34,7 +39,6 @@ class _ScalePageState extends State<ScalePage> {
 
   void _addGradeRow() {
     debugPrint("DEBUG: Adding new grade row");
-
     setState(() {
       _grades.add(_GradeRow(grade: "", min: 0, max: 0));
     });
@@ -42,31 +46,19 @@ class _ScalePageState extends State<ScalePage> {
 
   void _removeRow(int index) {
     debugPrint("DEBUG: Removing grade row at index $index");
-
     setState(() {
       _grades.removeAt(index);
     });
   }
 
-  Future<void> _continue() async {
-    debugPrint("DEBUG: Validating grade scale...");
+  Future<void> _previewAnalytics() async {
+    debugPrint("DEBUG: Loading preview analytics...");
 
-    for (var row in _grades) {
-      if (row.grade.isEmpty) {
-        _showError("Grade name cannot be empty");
-        return;
-      }
-      if (row.min > row.max) {
-        _showError("Min cannot be greater than Max");
-        return;
-      }
-    }
-
-    debugPrint("DEBUG: Grade scale validated successfully");
+    _validateGradeScale();
 
     try {
-      debugPrint("DEBUG: Reading file...");
-      
+      setState(() => _isLoading = true);
+
       if (widget.fileBytes == null && widget.file == null) {
         _showError("No file selected");
         return;
@@ -81,88 +73,134 @@ class _ScalePageState extends State<ScalePage> {
         return;
       }
 
-      debugPrint("DEBUG: Assigning grades...");
-      FileService.assignGrades(students, _grades, _selectedBase);
+      setState(() {
+        _previewStudents = students;
+        _showPreview = true;
+      });
 
-      if (!mounted) return;
-
-      debugPrint("DEBUG: Navigating to Statistics Page with ${students.length} students");
-
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => StatisticsPage(students: students),
-        ),
-      );
+      _navigateToAnalytics(students);
     } catch (e) {
-      debugPrint("ERROR: Failed to process file -> $e");
+      debugPrint("ERROR: Failed to load analytics -> $e");
       if (mounted) {
-        _showError("Error processing file: $e");
+        _showError("Error: $e");
+      }
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  void _navigateToAnalytics(List<Student> students) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AnalyticsPreviewPage(students: students),
+      ),
+    ).then((result) {
+      if (result == true && mounted && _previewStudents != null) {
+        _navigateToManualInput(_previewStudents!);
+      }
+    });
+  }
+
+  void _navigateToManualInput(List<Student> students) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ManualInputPage(
+          students: students,
+          grades: _grades,
+          base: _selectedBase,
+        ),
+      ),
+    ).then((result) {
+      if (result != null && mounted) {
+        final updatedStudents = result as List<Student>;
+        _navigateToStatistics(updatedStudents);
+      }
+    });
+  }
+
+  void _navigateToStatistics(List<Student> students) {
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(
+        builder: (_) => StatisticsPage(students: students),
+      ),
+      (route) => false,
+    );
+  }
+
+  void _validateGradeScale() {
+    for (var row in _grades) {
+      if (row.grade.isEmpty) {
+        _showError("Grade name cannot be empty");
+        return;
+      }
+      if (row.min > row.max) {
+        _showError("Min cannot be greater than Max");
+        return;
       }
     }
   }
 
   void _showError(String message) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: const Color(0xFFEF4444),
+      ),
+    );
   }
 
   Widget _buildGradeRow(int index) {
     final row = _grades[index];
 
     return Card(
-      elevation: 3,
+      elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      margin: const EdgeInsets.symmetric(vertical: 6),
+      margin: const EdgeInsets.symmetric(vertical: 8),
       child: Padding(
-        padding: const EdgeInsets.all(10),
+        padding: const EdgeInsets.all(12),
         child: Row(
           children: [
-            /// Grade Text
             Expanded(
               flex: 2,
               child: TextFormField(
                 initialValue: row.grade,
-                decoration: const InputDecoration(labelText: "Grade"),
+                decoration: const InputDecoration(
+                  labelText: "Grade",
+                  prefixIcon: Icon(Icons.grade),
+                ),
                 onChanged: (value) {
                   row.grade = value;
                 },
               ),
             ),
-
             const SizedBox(width: 10),
-
-            /// Min
             Expanded(
               child: TextFormField(
                 initialValue: row.min.toString(),
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: "Min"),
+                decoration: const InputDecoration(labelText: "Min", prefixIcon: Icon(Icons.arrow_upward)),
                 onChanged: (value) {
                   row.min = int.tryParse(value) ?? 0;
                 },
               ),
             ),
-
             const SizedBox(width: 10),
-
-            /// Max
             Expanded(
               child: TextFormField(
                 initialValue: row.max.toString(),
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: "Max"),
+                decoration: const InputDecoration(labelText: "Max", prefixIcon: Icon(Icons.arrow_downward)),
                 onChanged: (value) {
                   row.max = int.tryParse(value) ?? 0;
                 },
               ),
             ),
-
             const SizedBox(width: 10),
-
-            /// Delete Button
             IconButton(
-              icon: const Icon(Icons.delete, color: Colors.red),
+              icon: const Icon(Icons.delete_outline, color: Color(0xFFEF4444)),
               onPressed: () => _removeRow(index),
             )
           ],
@@ -177,82 +215,142 @@ class _ScalePageState extends State<ScalePage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Set Grade Scale"),
+        title: const Text("Grade Scale Configuration"),
+        elevation: 0,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            /// Base Selection
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text(
-                  "Select Base: ",
-                  style: TextStyle(fontSize: 16),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              /// Info Card
+              Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEEF2FF),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFDDD6FE)),
                 ),
-                const SizedBox(width: 10),
-                DropdownButton<int>(
-                  value: _selectedBase,
-                  items: const [
-                    DropdownMenuItem(value: 100, child: Text("Over 100")),
-                    DropdownMenuItem(value: 20, child: Text("Over 20")),
+                padding: const EdgeInsets.all(16),
+                child: const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Define Your Grade Scale",
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      "Set the score ranges for each grade. Students will be graded based on these ranges.",
+                      style: TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
                   ],
-                  onChanged: (value) {
-                    debugPrint("DEBUG: Base changed to $value");
-                    setState(() {
-                      _selectedBase = value!;
-                    });
-                  },
-                )
-              ],
-            ),
-
-            const SizedBox(height: 20),
-
-            const Text(
-              "Define Grade Ranges",
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
+                ),
               ),
-            ),
 
-            const SizedBox(height: 10),
+              const SizedBox(height: 20),
 
-            Expanded(
-              child: ListView.builder(
+              /// Base Selection
+              Container(
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey.withOpacity(0.3)),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      "Select Grading Base:",
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    DropdownButton<int>(
+                      value: _selectedBase,
+                      style: const TextStyle(color: Color(0xFF6366F1), fontWeight: FontWeight.bold),
+                      items: const [
+                        DropdownMenuItem(value: 100, child: Text("Out of 100")),
+                        DropdownMenuItem(value: 20, child: Text("Out of 20")),
+                      ],
+                      onChanged: (value) {
+                        debugPrint("DEBUG: Base changed to $value");
+                        setState(() {
+                          _selectedBase = value!;
+                        });
+                      },
+                    )
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
+              /// Grade rows header
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    "Grade Ranges",
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  ),
+                  ElevatedButton.icon(
+                    onPressed: _addGradeRow,
+                    icon: const Icon(Icons.add, size: 20),
+                    label: const Text("Add"),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.grey,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 12),
+
+              /// Grade rows list
+              ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
                 itemCount: _grades.length,
                 itemBuilder: (context, index) {
                   return _buildGradeRow(index);
                 },
               ),
-            ),
 
-            const SizedBox(height: 10),
+              const SizedBox(height: 24),
 
-            /// Add Row
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: _addGradeRow,
-                icon: const Icon(Icons.add),
-                label: const Text("Add Grade Row"),
+              /// Action Buttons
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(Icons.arrow_back),
+                      label: const Text("Back"),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.grey,
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: _isLoading ? null : _previewAnalytics,
+                      icon: _isLoading ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      ) : const Icon(Icons.show_chart),
+                      label: Text(_isLoading ? "Loading..." : "Preview Analytics"),
+                    ),
+                  ),
+                ],
               ),
-            ),
-
-            const SizedBox(height: 15),
-
-            /// Continue Button
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                onPressed: _continue,
-                child: const Text("Compute Grades"),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

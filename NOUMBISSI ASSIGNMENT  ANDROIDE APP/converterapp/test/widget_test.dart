@@ -8,17 +8,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:grade_converted_flutter_app/main.dart';
+import 'package:converterapp/main.dart';
 
 void main() {
-  testWidgets('Grade Converter app smoke test', (WidgetTester tester) async {
+  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
     // Build our app and trigger a frame.
-    await tester.pumpWidget(const GradeApp());
+    await tester.pumpWidget(const MyApp());
 
-    // Verify that the app has loaded
-    expect(find.text('Smart Grade Analyzer'), findsOneWidget);
+    // Verify that our counter starts at 0.
+    expect(find.text('0'), findsOneWidget);
+    expect(find.text('1'), findsNothing);
 
-    // Verify splash screen is displayed
-    expect(find.byIcon(Icons.school), findsWidgets);
+    // Tap the '+' icon and trigger a frame.
+    await tester.tap(find.byIcon(Icons.add));
+    await tester.pump();
+
+    // Verify that our counter has incremented.
+    expect(find.text('0'), findsNothing);
+    expect(find.text('1'), findsOneWidget);
   });
 }

@@ -266,45 +266,78 @@ class FileService {
   }
 
   /// ==============================
+  /// EXPORT TO CSV (FOR WEB & ALL PLATFORMS)
+  /// ==============================
+  static String exportToCSV(List<Student> students) {
+    debugPrint("DEBUG: Exporting to CSV...");
+    
+    List<List<String>> csvData = [
+      ["Name", "CA", "Exam", "Total", "Grade", "Status"],
+    ];
+    
+    for (var student in students) {
+      String status = student.total >= 50 ? "PASS" : "FAIL";
+      csvData.add([
+        student.name,
+        student.ca.toStringAsFixed(1),
+        student.exam.toStringAsFixed(1),
+        student.total.toStringAsFixed(1),
+        student.grade.isEmpty ? "-" : student.grade,
+        status
+      ]);
+    }
+    
+    String csv = const ListToCsvConverter().convert(csvData);
+    return csv;
+  }
+
+  /// ==============================
   /// EXPORT NEW EXCEL FILE
   /// ==============================
   static Future<String> exportToExcel(List<Student> students) async {
-    debugPrint("DEBUG: Exporting new Excel file...");
+    debugPrint("DEBUG: Exporting grades...");
 
-    var excel = Excel.createExcel();
-    Sheet sheet = excel['Sheet1'];
+    try {
+      if (kIsWeb) {
+        // Web: Create CSV
+        String csv = exportToCSV(students);
+        debugPrint("DEBUG: CSV prepared for download");
+        return csv;
+      } else {
+        // Desktop/Mobile: Save Excel file
+        var excel = Excel.createExcel();
+        Sheet sheet = excel['Sheet1'];
 
-    sheet.appendRow(["Name", "CA (30)", "Exam (70)", "Total (100)", "Grade"]);
+        sheet.appendRow(["Name", "CA", "Exam", "Total", "Grade", "Status"]);
 
-    for (var student in students) {
-      sheet.appendRow([
-        student.name,
-        student.ca,
-        student.exam,
-        student.total,
-        student.grade.isEmpty ? "-" : student.grade
-      ]);
-    }
+        for (var student in students) {
+          String status = student.total >= 50 ? "PASS" : "FAIL";
+          sheet.appendRow([
+            student.name,
+            student.ca,
+            student.exam,
+            student.total,
+            student.grade.isEmpty ? "-" : student.grade,
+            status
+          ]);
+        }
 
-    if (kIsWeb) {
-      // Web: Return a message indicating file is ready for download
-      debugPrint("DEBUG: File prepared for web download - graded_students.xlsx");
-      return "graded_students.xlsx";
-    } else {
-      // Desktop/Mobile: Save to file system
-      Directory? directory = await getExternalStorageDirectory();
-      if (directory == null) {
-        throw Exception("External storage directory not available");
+        Directory? directory = await getExternalStorageDirectory();
+        if (directory == null) {
+          throw Exception("External storage directory not available");
+        }
+        String path = "${directory.path}/graded_students.xlsx";
+
+        File(path)
+          ..createSync(recursive: true)
+          ..writeAsBytesSync(excel.encode()!);
+
+        debugPrint("DEBUG: File exported to $path");
+        return path;
       }
-      String path = "${directory.path}/graded_students.xlsx";
-
-      File(path)
-        ..createSync(recursive: true)
-        ..writeAsBytesSync(excel.encode()!);
-
-      debugPrint("DEBUG: File exported to $path");
-
-      return path;
+    } catch (e) {
+      debugPrint("ERROR: Export failed -> $e");
+      throw Exception("Export failed: $e");
     }
   }
 }
